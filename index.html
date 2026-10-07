@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#c62828">
+<title>Kế toán Công đoàn</title>
+<style>
+  :root {
+    --bg: #f4f1ec;
+    --card: #ffffff;
+    --text: #1f2328;
+    --muted: #5f6670;
+    --primary: #c62828;
+    --primary-dark: #8e1b1b;
+    --ok: #2e7d32;
+    --ok-bg: #e8f5e9;
+    --bad: #c62828;
+    --bad-bg: #fdecea;
+    --border: #e2ded6;
+    --shadow: 0 2px 10px rgba(0,0,0,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181c;
+      --card: #22252b;
+      --text: #eceef1;
+      --muted: #a2a8b1;
+      --primary: #ef5350;
+      --primary-dark: #ff8a80;
+      --ok: #66bb6a;
+      --ok-bg: #1d3320;
+      --bad: #ef5350;
+      --bad-bg: #3a1f1f;
+      --border: #363a42;
+      --shadow: 0 2px 10px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 12px;
+  }
+  header.top h1 { font-size: 1.1rem; margin: 0; color: var(--primary); }
+  .stats { display: flex; gap: 8px; font-size: .9rem; }
+  .pill {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 999px; padding: 4px 12px; white-space: nowrap;
+  }
+  .pill b { color: var(--primary); }
+  .progress {
+    height: 8px; background: var(--border); border-radius: 999px;
+    overflow: hidden; margin-bottom: 16px;
+  }
+  .progress > div { height: 100%; background: var(--primary); width: 0; transition: width .3s; }
+  .card {
+    background: var(--card); border-radius: 16px; box-shadow: var(--shadow);
+    padding: 20px; margin-bottom: 16px; border: 1px solid var(--border);
+  }
+  .tag {
+    display: inline-block; font-size: .78rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .03em;
+    color: var(--primary); background: var(--bad-bg);
+    padding: 3px 10px; border-radius: 999px; margin-bottom: 10px;
+  }
+  .scenario { font-size: 1.05rem; margin: 0 0 6px; }
+  .question { font-weight: 700; margin: 12px 0 0; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    display: flex; gap: 12px; align-items: flex-start; text-align: left;
+    width: 100%; min-height: 52px; padding: 14px 16px;
+    font: inherit; color: var(--text);
+    background: var(--card); border: 2px solid var(--border); border-radius: 12px;
+    cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--primary); }
+  .opt:disabled { cursor: default; }
+  .opt .key {
+    flex: 0 0 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center; font-weight: 700; font-size: .9rem;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .opt.correct { border-color: var(--ok); background: var(--ok-bg); }
+  .opt.correct .key { background: var(--ok); color: #fff; border-color: var(--ok); }
+  .opt.wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .opt.wrong .key { background: var(--bad); color: #fff; border-color: var(--bad); }
+  .opt.dim { opacity: .55; }
+  .feedback { border-left: 6px solid var(--ok); }
+  .feedback.bad { border-left-color: var(--bad); }
+  .feedback h3 { margin: 0 0 8px; font-size: 1.1rem; }
+  .feedback.good h3 { color: var(--ok); }
+  .feedback.bad h3 { color: var(--bad); }
+  .feedback p { margin: 0 0 8px; }
+  .feedback .basis { font-size: .88rem; color: var(--muted); margin: 0; }
+  .btn {
+    display: block; width: 100%; min-height: 52px; padding: 14px;
+    font: inherit; font-weight: 700; color: #fff;
+    background: var(--primary); border: 0; border-radius: 12px; cursor: pointer;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.ghost { background: transparent; color: var(--primary); border: 2px solid var(--primary); margin-top: 10px; }
+  .hero { text-align: center; }
+  .hero .logo { font-size: 3.2rem; line-height: 1; margin: 8px 0; }
+  .hero h2 { margin: 6px 0 8px; font-size: 1.45rem; color: var(--primary); }
+  .hero p { color: var(--muted); margin: 0 0 16px; }
+  ul.rules { padding-left: 20px; margin: 0 0 18px; text-align: left; }
+  ul.rules li { margin-bottom: 6px; }
+  .big-score { font-size: 3rem; font-weight: 800; color: var(--primary); margin: 4px 0; }
+  .note { font-size: .82rem; color: var(--muted); text-align: center; margin-top: 8px; }
+  .review { text-align: left; margin-top: 12px; }
+  .review details {
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; margin-bottom: 8px;
+  }
+  .review summary { cursor: pointer; font-weight: 600; }
+  .review .r-bad { color: var(--bad); }
+  .review .r-ok { color: var(--ok); }
+  .streak { color: #ef6c00; font-weight: 700; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Màn hình bắt đầu -->
+  <section id="start" class="card hero">
+    <div class="logo" aria-hidden="true">🧮</div>
+    <h2>Kế toán Công đoàn cơ sở</h2>
+    <p>Bạn vừa được Ban Chấp hành giao làm kế toán công đoàn. Hãy xử lý đúng các nghiệp vụ thu, chi!</p>
+    <ul class="rules">
+      <li>Mỗi lượt chơi có <b id="rule-count">12</b> tình huống ngẫu nhiên.</li>
+      <li>Chọn cách hạch toán hoặc quyết định chi đúng nhất.</li>
+      <li>Đúng: <b>+10 điểm</b>, trả lời đúng liên tiếp được thưởng thêm <b>+2</b>/câu.</li>
+      <li>Sai: không mất điểm, nhưng sẽ được giải thích lý do.</li>
+    </ul>
+    <button class="btn" id="btn-start">Bắt đầu làm việc</button>
+    <p class="note" id="best-line"></p>
+  </section>
+
+  <!-- Màn hình chơi -->
+  <section id="game" class="hidden">
+    <header class="top">
+      <h1 id="q-index">Tình huống 1/12</h1>
+      <div class="stats">
+        <span class="pill">Điểm: <b id="score">0</b></span>
+        <span class="pill" id="streak-pill">🔥 <span id="streak">0</span></span>
+      </div>
+    </header>
+    <div class="progress"><div id="bar"></div></div>
+
+    <div class="card">
+      <span class="tag" id="q-tag">Thu</span>
+      <p class="scenario" id="q-text"></p>
+      <p class="question" id="q-ask"></p>
+    </div>
+
+    <div class="options" id="options"></div>
+
+    <div id="feedback" class="card feedback hidden" style="margin-top:16px" aria-live="polite">
+      <h3 id="fb-title"></h3>
+      <p id="fb-text"></p>
+      <p class="basis" id="fb-basis"></p>
+    </div>
+
+    <button class="btn hidden" id="btn-next">Tình huống tiếp theo →</button>
+  </section>
+
+  <!-- Màn hình kết quả -->
+  <section id="result" class="card hero hidden">
+    <div class="logo" id="r-icon">🏆</div>
+    <h2 id="r-title">Hoàn thành!</h2>
+    <div class="big-score" id="r-score">0</div>
+    <p id="r-detail"></p>
+    <p id="r-rank" style="font-weight:700;color:var(--text)"></p>
+    <button class="btn" id="btn-again">Chơi lượt mới</button>
+    <button class="btn ghost" id="btn-review">Xem lại các câu sai</button>
+    <div class="review hidden" id="review"></div>
+  </section>
+
+  <p class="note">Nội dung mang tính chất ôn tập, tham khảo theo Luật Công đoàn, Điều lệ Công đoàn Việt Nam
+    và hướng dẫn tài chính của Tổng Liên đoàn Lao động Việt Nam. Khi thực hiện thực tế, vui lòng đối chiếu văn bản hiện hành
+    và quy chế chi tiêu nội bộ của đơn vị.</p>
+</div>
+
+<script>
+// ===== Ngân hàng tình huống =====
+// tag: loại nghiệp vụ; options: các phương án; answer: chỉ số đáp án đúng;
+// why: giải thích; basis: căn cứ tham khảo.
+const QUESTIONS = [
+  {
+    tag: "Thu đoàn phí",
+    text: "Chị Lan là đoàn viên, tiền lương làm căn cứ đóng BHXH là 8.000.000đ/tháng.",
+    ask: "Mức đoàn phí công đoàn chị Lan phải đóng hằng tháng là bao nhiêu?",
+    options: ["40.000đ (0,5% lương)", "80.000đ (1% lương)", "160.000đ (2% lương)", "Không phải đóng vì doanh nghiệp đã đóng kinh phí công đoàn"],
+    answer: 1,
+    why: "Đoàn viên đóng đoàn phí bằng 1% tiền lương làm căn cứ đóng BHXH: 8.000.000 × 1% = 80.000đ. Mức 2% là kinh phí công đoàn do cơ quan, doanh nghiệp đóng — hai khoản này độc lập, doanh nghiệp đóng kinh phí không thay cho đoàn phí của đoàn viên.",
+    basis: "Căn cứ: Điều lệ Công đoàn Việt Nam; hướng dẫn thu đoàn phí của Tổng LĐLĐVN (mức đóng tối đa bằng 10% lương cơ sở)."
+  },
+  {
+    tag: "Thu kinh phí",
+    text: "Công ty có quỹ tiền lương làm căn cứ đóng BHXH tháng này là 500.000.000đ.",
+    ask: "Công ty phải đóng kinh phí công đoàn bao nhiêu?",
+    options: ["5.000.000đ (1%)", "10.000.000đ (2%)", "15.000.000đ (3%)", "Chỉ đóng phần tương ứng với số người là đoàn viên"],
+    answer: 1,
+    why: "Kinh phí công đoàn do cơ quan, tổ chức, doanh nghiệp đóng bằng 2% quỹ tiền lương làm căn cứ đóng BHXH cho người lao động — tính trên toàn bộ người lao động thuộc đối tượng đóng BHXH, không phân biệt có là đoàn viên hay không.",
+    basis: "Căn cứ: Luật Công đoàn (Điều về tài chính công đoàn); Nghị định quy định chi tiết về tài chính công đoàn."
+  },
+  {
+    tag: "Hạch toán",
+    text: "Ngân hàng báo Có: công đoàn cấp trên cấp lại phần kinh phí công đoàn cơ sở được sử dụng, số tiền 12.000.000đ vào tài khoản của công đoàn cơ sở.",
+    ask: "Bạn hạch toán thế nào?",
+    options: ["Nợ TK 111 (Tiền mặt) / Có thu kinh phí", "Nợ TK 112 (Tiền gửi ngân hàng) / Có thu kinh phí công đoàn được cấp", "Nợ TK 112 / Có thu đoàn phí", "Chưa hạch toán, chờ rút tiền mặt về mới ghi sổ"],
+    answer: 1,
+    why: "Tiền về tài khoản ngân hàng thì ghi tăng tiền gửi (TK 112), đồng thời ghi nhận nguồn thu kinh phí công đoàn được phân phối. Đây không phải đoàn phí. Nghiệp vụ phải ghi sổ ngay khi có chứng từ (giấy báo Có), không chờ rút tiền.",
+    basis: "Nguyên tắc: ghi sổ kịp thời theo chứng từ; phân biệt rõ nguồn thu kinh phí và đoàn phí."
+  },
+  {
+    tag: "Hạch toán",
+    text: "Kế toán viết séc rút 5.000.000đ từ tài khoản ngân hàng về nhập quỹ tiền mặt để chuẩn bị chi thăm hỏi.",
+    ask: "Bút toán đúng là:",
+    options: ["Nợ TK 111 / Có TK 112", "Nợ TK 112 / Có TK 111", "Ghi tăng thu, ghi tăng chi cùng lúc", "Ghi chi hoạt động phong trào 5.000.000đ"],
+    answer: 0,
+    why: "Rút tiền gửi về quỹ chỉ là chuyển đổi hình thức tiền: tiền mặt tăng (Nợ 111), tiền gửi giảm (Có 112). Chưa phát sinh khoản chi nào, nên không ghi chi phí.",
+    basis: "Nguyên tắc kế toán: nghiệp vụ chuyển tiền nội bộ không làm thay đổi tổng nguồn."
+  },
+  {
+    tag: "Chi thăm hỏi",
+    text: "Anh Minh (đoàn viên) nằm viện 7 ngày. Quy chế chi tiêu nội bộ quy định thăm đoàn viên ốm nằm viện từ 3 ngày trở lên: 500.000đ/lần.",
+    ask: "Bạn xử lý thế nào?",
+    options: ["Chi 500.000đ, lập phiếu chi kèm giấy đề nghị được Chủ tịch CĐ duyệt", "Chi 1.000.000đ vì anh Minh nằm viện lâu", "Không chi vì thăm hỏi phải dùng tiền của công ty", "Chi bằng tiền mặt, không cần chứng từ vì là việc tình nghĩa"],
+    answer: 0,
+    why: "Chi thăm hỏi đoàn viên ốm đau là nội dung chi hợp lệ, nhưng phải đúng mức trong quy chế chi tiêu nội bộ đã được Ban Chấp hành thông qua, và có đầy đủ chứng từ (giấy đề nghị, phiếu chi có chữ ký người nhận, phê duyệt của chủ tài khoản). Muốn chi cao hơn phải sửa quy chế, không tùy tiện.",
+    basis: "Căn cứ: quy định thu, chi, quản lý tài chính công đoàn cơ sở của Tổng LĐLĐVN; quy chế chi tiêu nội bộ."
+  },
+  {
+    tag: "Phân loại chi",
+    text: "Bạn vừa chi 500.000đ thăm hỏi đoàn viên ốm đau nằm viện.",
+    ask: "Khoản chi này ghi vào mục chi nào?",
+    options: ["Chi lương, phụ cấp cán bộ công đoàn", "Chi quản lý hành chính", "Chi hoạt động phong trào (chăm lo, thăm hỏi đoàn viên)", "Chi nộp cấp trên"],
+    answer: 2,
+    why: "Thăm hỏi, trợ cấp đoàn viên ốm đau, khó khăn thuộc nhóm chi trực tiếp chăm lo cho đoàn viên — hạch toán vào chi hoạt động phong trào. Chi quản lý hành chính dành cho văn phòng phẩm, hội nghị, công tác phí…",
+    basis: "Căn cứ: mục lục chi tài chính công đoàn cơ sở theo hướng dẫn của Tổng LĐLĐVN."
+  },
+  {
+    tag: "Phân loại chi",
+    text: "Công đoàn mua giấy in, mực máy in, sổ sách phục vụ công việc văn phòng của Ban Chấp hành, tổng 850.000đ, có hóa đơn.",
+    ask: "Ghi vào mục chi nào?",
+    options: ["Chi hoạt động phong trào", "Chi quản lý hành chính", "Chi phụ cấp cán bộ công đoàn", "Không được chi, phải xin công ty"],
+    answer: 1,
+    why: "Văn phòng phẩm phục vụ hoạt động bộ máy công đoàn là chi quản lý hành chính. Khoản chi hợp lệ khi có hóa đơn, chứng từ hợp pháp và được chủ tài khoản phê duyệt.",
+    basis: "Căn cứ: mục lục chi tài chính công đoàn cơ sở."
+  },
+  {
+    tag: "Quyết định chi",
+    text: "Chủ tịch công đoàn đề nghị dùng quỹ công đoàn mua quà Tết biếu Giám đốc và các Phó Giám đốc công ty (không phải đoàn viên) để \"giữ quan hệ\".",
+    ask: "Bạn xử lý thế nào?",
+    options: ["Chi ngay vì Chủ tịch đã đồng ý", "Chi nhưng ghi vào mục hoạt động phong trào", "Từ chối: nội dung chi không đúng mục đích, không phục vụ đoàn viên", "Chi bằng tiền mặt để không cần hóa đơn"],
+    answer: 2,
+    why: "Tài chính công đoàn phải dùng đúng mục đích: chăm lo, bảo vệ quyền lợi đoàn viên, người lao động và hoạt động của tổ chức công đoàn. Biếu quà lãnh đạo doanh nghiệp để \"giữ quan hệ\" không thuộc nội dung chi được phép. Kế toán có quyền và trách nhiệm từ chối chi sai chế độ.",
+    basis: "Căn cứ: Luật Kế toán (quyền từ chối thực hiện yêu cầu trái pháp luật); quy định quản lý tài chính công đoàn."
+  },
+  {
+    tag: "Chứng từ",
+    text: "Công đoàn tổ chức trao quà 8/3 cho 60 nữ đoàn viên, mỗi người 200.000đ tiền mặt theo kế hoạch được BCH thông qua.",
+    ask: "Chứng từ cần có để thanh toán là gì?",
+    options: ["Chỉ cần phiếu chi tổng 12.000.000đ", "Kế hoạch/quyết định chi, danh sách ký nhận của từng người, phiếu chi", "Chỉ cần ảnh chụp buổi trao quà", "Giấy biên nhận do Chủ tịch công đoàn ký thay tất cả"],
+    answer: 1,
+    why: "Chi tiền cho nhiều người phải có văn bản phê duyệt (kế hoạch/quyết định), danh sách có chữ ký nhận tiền của từng người và phiếu chi. Ảnh chụp hay chữ ký thay không thay thế được chứng từ gốc.",
+    basis: "Căn cứ: Luật Kế toán về chứng từ kế toán; hướng dẫn chứng từ của Tổng LĐLĐVN."
+  },
+  {
+    tag: "Quyết định chi",
+    text: "Tổ sản xuất đề nghị công đoàn chi tiền tổ chức ăn liên hoan cuối tuần cho cả tổ, không có trong kế hoạch, không có quy chế, chỉ có lời đề nghị miệng.",
+    ask: "Bạn nên làm gì?",
+    options: ["Chi luôn cho vui vẻ tập thể", "Chưa chi; hướng dẫn lập đề nghị bằng văn bản, đối chiếu quy chế và trình BCH/chủ tài khoản xem xét", "Chi rồi bổ sung chứng từ sau 6 tháng", "Từ chối vĩnh viễn mọi đề nghị liên hoan"],
+    answer: 1,
+    why: "Mọi khoản chi phải nằm trong dự toán, đúng quy chế chi tiêu nội bộ và được người có thẩm quyền duyệt trước khi chi. Không có căn cứ thì chưa được chi; nhưng nếu hợp lý, có thể trình xem xét theo đúng thủ tục.",
+    basis: "Nguyên tắc: chi theo dự toán, quy chế và phê duyệt của chủ tài khoản."
+  },
+  {
+    tag: "Nộp cấp trên",
+    text: "Cuối tháng, công đoàn cơ sở đã thu đủ đoàn phí của đoàn viên.",
+    ask: "Công đoàn cơ sở phải làm gì với số đoàn phí này?",
+    options: ["Giữ lại toàn bộ để chi tiêu", "Nộp phần tỷ lệ theo quy định lên công đoàn cấp trên, phần còn lại sử dụng tại cơ sở", "Chuyển hết cho công ty quản lý", "Chia đều lại cho đoàn viên cuối năm"],
+    answer: 1,
+    why: "Đoàn phí thu được phân phối theo tỷ lệ do Tổng LĐLĐVN quy định: một phần nộp lên công đoàn cấp trên trực tiếp, phần còn lại công đoàn cơ sở được sử dụng. Khi nộp phải hạch toán vào khoản nộp cấp trên, không ghi vào chi hoạt động.",
+    basis: "Căn cứ: quy định phân phối nguồn thu tài chính công đoàn hiện hành của Tổng LĐLĐVN."
+  },
+  {
+    tag: "Quỹ tiền mặt",
+    text: "Cuối ngày kiểm quỹ, tiền mặt thực tế ít hơn sổ quỹ 300.000đ, chưa rõ nguyên nhân.",
+    ask: "Xử lý đúng là:",
+    options: ["Tự bỏ tiền túi bù vào cho khớp, không ghi chép", "Sửa sổ quỹ giảm 300.000đ cho khớp thực tế", "Lập biên bản kiểm kê quỹ, ghi nhận số thiếu chờ xử lý, báo cáo chủ tài khoản tìm nguyên nhân", "Ghi tăng chi quản lý hành chính 300.000đ"],
+    answer: 2,
+    why: "Chênh lệch quỹ phải được lập biên bản kiểm kê, phản ánh số thiếu chờ xử lý và báo cáo để xác định nguyên nhân, trách nhiệm. Tự ý sửa sổ hoặc hợp thức hóa bằng một khoản chi là sai nguyên tắc kế toán.",
+    basis: "Căn cứ: Luật Kế toán; quy định quản lý quỹ tiền mặt."
+  },
+  {
+    tag: "Chi thăm hỏi",
+    text: "Bố đẻ của một đoàn viên qua đời. Quy chế chi tiêu nội bộ có quy định viếng tứ thân phụ mẫu của đoàn viên.",
+    ask: "Công đoàn có được chi viếng không?",
+    options: ["Không, chỉ được chi khi đoàn viên mất", "Có, theo mức trong quy chế, kèm đề nghị và chứng từ chi", "Có, mức chi tùy Chủ tịch quyết định tại chỗ", "Có, nhưng phải lấy từ quỹ phúc lợi của công ty"],
+    answer: 1,
+    why: "Thăm hỏi, phúng viếng khi thân nhân của đoàn viên qua đời là nội dung chăm lo đoàn viên được phép chi, theo mức quy định trong quy chế chi tiêu nội bộ. Mức chi phải theo quy chế, không tùy ý quyết định tại chỗ.",
+    basis: "Căn cứ: hướng dẫn chi thăm hỏi đoàn viên của Tổng LĐLĐVN; quy chế chi tiêu nội bộ."
+  },
+  {
+    tag: "Quyết định chi",
+    text: "Một người lao động chưa gia nhập công đoàn bị tai nạn lao động, hoàn cảnh khó khăn. BCH muốn hỗ trợ.",
+    ask: "Hướng xử lý phù hợp nhất:",
+    options: ["Tuyệt đối không được hỗ trợ người chưa là đoàn viên", "Có thể hỗ trợ nếu quy chế chi tiêu nội bộ có quy định chi cho người lao động, chi đúng mức và đủ chứng từ", "Hỗ trợ không giới hạn vì là việc nhân đạo", "Dùng tiền đoàn phí của đoàn viên khác chia ra hỗ trợ không cần ghi sổ"],
+    answer: 1,
+    why: "Công đoàn đại diện, chăm lo cho cả người lao động; quy định tài chính cho phép công đoàn cơ sở chi thăm hỏi, hỗ trợ người lao động trong một số trường hợp nếu được cụ thể hóa trong quy chế chi tiêu nội bộ. Mọi khoản chi vẫn phải đúng mức, có chứng từ và ghi sổ đầy đủ.",
+    basis: "Căn cứ: quy định thu, chi tài chính công đoàn cơ sở; quy chế chi tiêu nội bộ."
+  },
+  {
+    tag: "Hạch toán",
+    text: "Đoàn viên nộp đoàn phí bằng tiền mặt cho kế toán, tổng thu trong tháng 2.400.000đ, có danh sách thu.",
+    ask: "Bút toán đúng là:",
+    options: ["Nợ TK 112 / Có thu đoàn phí", "Nợ TK 111 / Có thu đoàn phí công đoàn", "Nợ TK 111 / Có thu kinh phí công đoàn", "Nợ chi hoạt động / Có TK 111"],
+    answer: 1,
+    why: "Thu bằng tiền mặt nên ghi tăng tiền mặt (Nợ 111), nguồn thu là đoàn phí (do đoàn viên đóng), không phải kinh phí công đoàn (do doanh nghiệp đóng 2%). Kèm phiếu thu và danh sách đoàn viên nộp.",
+    basis: "Nguyên tắc: phản ánh đúng hình thức tiền và đúng nguồn thu."
+  },
+  {
+    tag: "Tổ chức hoạt động",
+    text: "Công đoàn tổ chức giải bóng đá chào mừng Ngày thành lập Công đoàn Việt Nam 28/7, có kế hoạch và dự toán được BCH duyệt. Chi thuê sân, nước uống, giải thưởng.",
+    ask: "Khoản chi này:",
+    options: ["Hợp lệ, ghi vào chi hoạt động phong trào (văn hóa, thể thao), kèm hóa đơn, danh sách nhận thưởng", "Không hợp lệ vì công đoàn không được chi thể thao", "Hợp lệ, ghi vào chi lương cán bộ công đoàn", "Hợp lệ, không cần chứng từ vì đã có kế hoạch"],
+    answer: 0,
+    why: "Tổ chức hoạt động văn hóa, thể thao cho đoàn viên, người lao động là nội dung chi hoạt động phong trào. Có kế hoạch được duyệt vẫn phải có chứng từ thanh toán: hợp đồng/hóa đơn thuê sân, mua nước, danh sách ký nhận giải thưởng.",
+    basis: "Căn cứ: mục lục chi hoạt động phong trào của công đoàn cơ sở."
+  },
+  {
+    tag: "Quyết định chi",
+    text: "Một cán bộ công đoàn đề nghị tạm ứng 10.000.000đ đi mua quà Trung thu cho con đoàn viên, có giấy đề nghị tạm ứng được duyệt.",
+    ask: "Sau khi mua xong, cán bộ cần làm gì?",
+    options: ["Không cần làm gì, khoản tạm ứng coi như đã chi", "Lập giấy thanh toán tạm ứng kèm hóa đơn, danh sách nhận quà; hoàn trả số thừa nếu có", "Giữ lại tiền thừa làm quỹ riêng của tổ", "Chỉ báo miệng với kế toán"],
+    answer: 1,
+    why: "Tạm ứng phải được quyết toán (thanh toán tạm ứng) bằng chứng từ hợp lệ. Kế toán chỉ ghi chi khi có chứng từ thanh toán; tiền thừa phải nộp lại quỹ, thiếu thì được chi bổ sung nếu được duyệt.",
+    basis: "Nguyên tắc: quản lý và thanh toán tạm ứng theo Luật Kế toán."
+  },
+  {
+    tag: "Quyết định chi",
+    text: "Chủ tịch công đoàn đề nghị gửi tiết kiệm có kỳ hạn số dư quỹ đứng tên cá nhân mình cho \"lãi suất cao hơn\".",
+    ask: "Bạn xử lý thế nào?",
+    options: ["Đồng ý vì sinh lời cho công đoàn", "Từ chối: tiền công đoàn phải gửi vào tài khoản đứng tên tổ chức công đoàn, không được đứng tên cá nhân", "Đồng ý nếu có giấy cam kết của Chủ tịch", "Chia đôi: một nửa đứng tên Chủ tịch, một nửa đứng tên kế toán"],
+    answer: 1,
+    why: "Tài sản, tiền của công đoàn phải được quản lý trong tài khoản mang tên tổ chức công đoàn. Đứng tên cá nhân là sai nguyên tắc, tiềm ẩn rủi ro thất thoát, chiếm dụng.",
+    basis: "Căn cứ: quy định quản lý tài chính, tài sản công đoàn."
+  },
+  {
+    tag: "Phân loại chi",
+    text: "Ban Chấp hành có chế độ phụ cấp hằng tháng cho Chủ tịch công đoàn cơ sở kiêm nhiệm theo quy định của Tổng LĐLĐVN.",
+    ask: "Khoản chi phụ cấp này ghi vào mục nào?",
+    options: ["Chi hoạt động phong trào", "Chi quản lý hành chính", "Chi phụ cấp cán bộ công đoàn", "Chi khen thưởng"],
+    answer: 2,
+    why: "Phụ cấp trách nhiệm của cán bộ công đoàn không chuyên trách là mục chi riêng (chi lương, phụ cấp cán bộ công đoàn), không lẫn vào chi phong trào hay quản lý hành chính. Mức phụ cấp theo quy định của Tổng LĐLĐVN, có danh sách ký nhận.",
+    basis: "Căn cứ: quy định về phụ cấp cán bộ công đoàn của Tổng LĐLĐVN."
+  },
+  {
+    tag: "Báo cáo",
+    text: "Kết thúc năm tài chính, công đoàn cơ sở đã khóa sổ.",
+    ask: "Kế toán cần làm tiếp việc gì?",
+    options: ["Hủy toàn bộ chứng từ để gọn tủ hồ sơ", "Lập báo cáo quyết toán, trình BCH thông qua, gửi công đoàn cấp trên và công khai tài chính với đoàn viên", "Chỉ báo cáo miệng tại hội nghị", "Chờ cấp trên hỏi mới báo cáo"],
+    answer: 1,
+    why: "Cuối năm, công đoàn cơ sở phải lập báo cáo quyết toán thu chi, được Ban Chấp hành thông qua, gửi công đoàn cấp trên theo thời hạn và công khai tài chính. Chứng từ phải lưu trữ theo thời hạn của Luật Kế toán, không được tự hủy.",
+    basis: "Căn cứ: Luật Kế toán; quy định công khai tài chính công đoàn."
+  },
+  {
+    tag: "Kiểm tra",
+    text: "Ủy ban Kiểm tra công đoàn cơ sở đề nghị xem sổ sách, chứng từ thu chi quý vừa qua.",
+    ask: "Kế toán nên:",
+    options: ["Từ chối vì sổ sách là việc riêng của kế toán", "Cung cấp đầy đủ sổ sách, chứng từ để kiểm tra theo quy định", "Chỉ cung cấp phần thu, giấu phần chi", "Yêu cầu chờ đến cuối năm"],
+    answer: 1,
+    why: "Ủy ban Kiểm tra công đoàn có nhiệm vụ kiểm tra việc thu, chi, quản lý tài chính, tài sản của công đoàn cùng cấp. Kế toán có trách nhiệm cung cấp đầy đủ, trung thực tài liệu.",
+    basis: "Căn cứ: Điều lệ Công đoàn Việt Nam (nhiệm vụ của Ủy ban Kiểm tra)."
+  },
+  {
+    tag: "Quyết định chi",
+    text: "Đoàn viên đề nghị công đoàn cho vay 20.000.000đ từ quỹ để sửa nhà, hẹn 6 tháng trả, không có quy định nào về cho vay.",
+    ask: "Bạn xử lý thế nào?",
+    options: ["Cho vay vì là đoàn viên", "Không cho vay: tài chính công đoàn không được sử dụng để cho vay cá nhân khi không có quy định", "Cho vay có lấy lãi để tăng thu", "Cho vay bằng tiền đoàn phí, không ghi sổ"],
+    answer: 1,
+    why: "Tài chính công đoàn chỉ được chi đúng nội dung, mục đích quy định; cho cá nhân vay từ nguồn tài chính công đoàn không phải nội dung chi được phép. Nếu đoàn viên khó khăn, có thể xem xét trợ cấp theo quy chế hoặc giới thiệu tới các quỹ hỗ trợ hợp pháp (ví dụ quỹ xã hội do công đoàn vận động, có quy chế riêng).",
+    basis: "Căn cứ: nguyên tắc quản lý, sử dụng tài chính công đoàn."
+  },
+  {
+    tag: "Chi khen thưởng",
+    text: "Cuối năm, BCH quyết định khen thưởng 5 đoàn viên xuất sắc theo quy chế thi đua, mỗi người 300.000đ.",
+    ask: "Hồ sơ để chi gồm:",
+    options: ["Quyết định khen thưởng, danh sách ký nhận, phiếu chi", "Chỉ cần phiếu chi", "Chỉ cần giấy khen", "Biên bản họp tổ"],
+    answer: 0,
+    why: "Chi khen thưởng phải căn cứ quyết định khen thưởng của cấp có thẩm quyền, kèm danh sách người nhận ký nhận tiền và phiếu chi. Khoản này thuộc chi hoạt động phong trào (khen thưởng).",
+    basis: "Căn cứ: quy chế thi đua, khen thưởng và hướng dẫn chứng từ chi."
+  },
+  {
+    tag: "Thu kinh phí",
+    text: "Một doanh nghiệp tư nhân chưa thành lập công đoàn cơ sở hỏi: \"Chưa có công đoàn thì chúng tôi có phải đóng kinh phí công đoàn không?\"",
+    ask: "Trả lời đúng là:",
+    options: ["Không phải đóng", "Vẫn phải đóng 2% kinh phí công đoàn theo quy định của pháp luật", "Chỉ đóng 1%", "Chỉ đóng khi người lao động yêu cầu"],
+    answer: 1,
+    why: "Nghĩa vụ đóng kinh phí công đoàn áp dụng với cơ quan, tổ chức, doanh nghiệp theo Luật Công đoàn, không phụ thuộc việc đã thành lập công đoàn cơ sở hay chưa (nộp về công đoàn cấp trên theo phân cấp thu).",
+    basis: "Căn cứ: Luật Công đoàn và văn bản hướng dẫn về kinh phí công đoàn."
+  }
+];
+
+const ROUND_SIZE = 12;
+const BEST_KEY = "ktcd_best_score";
+const $ = id => document.getElementById(id);
+
+let round = [], idx = 0, score = 0, streak = 0, correctCount = 0, wrongs = [];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getBest() {
+  try { return parseInt(localStorage.getItem(BEST_KEY) || "0", 10) || 0; } catch (e) { return 0; }
+}
+function setBest(v) {
+  try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) {}
+}
+
+function show(id) {
+  ["start", "game", "result"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function startGame() {
+  // Xáo trộn câu hỏi và thứ tự phương án mỗi lượt chơi
+  round = shuffle(QUESTIONS).slice(0, ROUND_SIZE).map(q => {
+    const order = shuffle(q.options.map((_, i) => i));
+    return { ...q, options: order.map(i => q.options[i]), answer: order.indexOf(q.answer) };
+  });
+  idx = 0; score = 0; streak = 0; correctCount = 0; wrongs = [];
+  $("score").textContent = "0";
+  $("streak").textContent = "0";
+  show("game");
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = round[idx];
+  $("q-index").textContent = `Tình huống ${idx + 1}/${round.length}`;
+  $("bar").style.width = `${(idx / round.length) * 100}%`;
+  $("q-tag").textContent = q.tag;
+  $("q-text").textContent = q.text;
+  $("q-ask").textContent = q.ask;
+  $("feedback").classList.add("hidden");
+  $("btn-next").classList.add("hidden");
+
+  const box = $("options");
+  box.innerHTML = "";
+  q.options.forEach((text, i) => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.type = "button";
+    b.innerHTML = `<span class="key">${"ABCD"[i]}</span><span></span>`;
+    b.lastChild.textContent = text;
+    b.addEventListener("click", () => choose(i));
+    box.appendChild(b);
+  });
+}
+
+function choose(i) {
+  const q = round[idx];
+  const buttons = [...$("options").children];
+  buttons.forEach((b, j) => {
+    b.disabled = true;
+    if (j === q.answer) b.classList.add("correct");
+    else if (j === i) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+
+  const ok = i === q.answer;
+  const fb = $("feedback");
+  fb.classList.remove("hidden", "good", "bad");
+  if (ok) {
+    const bonus = streak > 0 ? 2 : 0;
+    streak++; correctCount++;
+    score += 10 + bonus;
+    fb.classList.add("good");
+    $("fb-title").textContent = bonus ? `✅ Chính xác! +${10 + bonus} điểm (thưởng chuỗi)` : "✅ Chính xác! +10 điểm";
+  } else {
+    streak = 0;
+    wrongs.push({ q, picked: q.options[i] });
+    fb.classList.add("bad");
+    $("fb-title").textContent = `❌ Chưa đúng. Đáp án đúng: ${"ABCD"[q.answer]}`;
+  }
+  $("fb-text").textContent = q.why;
+  $("fb-basis").textContent = q.basis;
+  $("score").textContent = score;
+  $("streak").textContent = streak;
+
+  const next = $("btn-next");
+  next.textContent = idx + 1 < round.length ? "Tình huống tiếp theo →" : "Xem kết quả";
+  next.classList.remove("hidden");
+  fb.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function nextQuestion() {
+  idx++;
+  if (idx < round.length) {
+    renderQuestion();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } else {
+    finish();
+  }
+}
+
+function finish() {
+  $("bar").style.width = "100%";
+  const best = getBest();
+  const isRecord = score > best;
+  if (isRecord) setBest(score);
+
+  const pct = correctCount / round.length;
+  let icon, rank;
+  if (pct >= 0.9) { icon = "🏆"; rank = "Kế toán công đoàn xuất sắc — sổ sách minh bạch, đoàn viên tin tưởng!"; }
+  else if (pct >= 0.7) { icon = "🥈"; rank = "Kế toán vững vàng — chỉ cần lưu ý thêm vài nghiệp vụ."; }
+  else if (pct >= 0.5) { icon = "📘"; rank = "Đạt yêu cầu — nên ôn lại quy chế chi tiêu nội bộ."; }
+  else { icon = "📚"; rank = "Cần bồi dưỡng thêm nghiệp vụ tài chính công đoàn."; }
+
+  $("r-icon").textContent = icon;
+  $("r-title").textContent = isRecord ? "Kỷ lục mới!" : "Hoàn thành!";
+  $("r-score").textContent = score;
+  $("r-detail").textContent = `Đúng ${correctCount}/${round.length} tình huống · Điểm cao nhất: ${Math.max(score, best)}`;
+  $("r-rank").textContent = rank;
+
+  const review = $("review");
+  review.classList.add("hidden");
+  review.innerHTML = "";
+  $("btn-review").classList.toggle("hidden", wrongs.length === 0);
+  wrongs.forEach(({ q, picked }) => {
+    const d = document.createElement("details");
+    const s = document.createElement("summary");
+    s.textContent = q.ask;
+    const p1 = document.createElement("p");
+    p1.innerHTML = `<span class="r-bad">Bạn chọn:</span> `;
+    p1.appendChild(document.createTextNode(picked));
+    const p2 = document.createElement("p");
+    p2.innerHTML = `<span class="r-ok">Đúng:</span> `;
+    p2.appendChild(document.createTextNode(q.options[q.answer]));
+    const p3 = document.createElement("p");
+    p3.textContent = q.why;
+    d.append(s, p1, p2, p3);
+    review.appendChild(d);
+  });
+  show("result");
+}
+
+function updateBestLine() {
+  const best = getBest();
+  $("best-line").textContent = best ? `Điểm cao nhất của bạn: ${best}` : "";
+}
+
+$("rule-count").textContent = Math.min(ROUND_SIZE, QUESTIONS.length);
+$("btn-start").addEventListener("click", startGame);
+$("btn-next").addEventListener("click", nextQuestion);
+$("btn-again").addEventListener("click", startGame);
+$("btn-review").addEventListener("click", () => $("review").classList.toggle("hidden"));
+updateBestLine();
+</script>
+</body>
+</html>
